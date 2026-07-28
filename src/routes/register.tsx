@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { UserPlus, Loader2, ShieldAlert } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { authSupabase } from "@/integrations/auth-supabase/client";
 import { registerAccountFn } from "@/lib/account.functions";
 import { useT } from "@/lib/i18n";
 
@@ -52,7 +52,7 @@ function RegisterPage() {
           password: form.password,
         },
       });
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await authSupabase.auth.signInWithPassword({
         email,
         password: form.password,
       });
