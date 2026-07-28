@@ -15,8 +15,8 @@ export type PublicProfile = {
 const AVATAR_BUCKET = "user-avatars";
 
 async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin as any;
+  const { authSupabaseAdmin } = await import("@/integrations/auth-supabase/client.server");
+  return authSupabaseAdmin as any;
 }
 
 export function normalizeUsername(u: string): string {

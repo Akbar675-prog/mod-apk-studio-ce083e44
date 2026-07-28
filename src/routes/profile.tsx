@@ -4,7 +4,7 @@ import { Loader2, LogOut, AtSign, User, Image as ImageIcon, Upload, BadgeCheck, 
 import { useQueryClient } from "@tanstack/react-query";
 import { AppHeader } from "@/components/AppHeader";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { supabase } from "@/integrations/supabase/client";
+import { authSupabase } from "@/integrations/auth-supabase/client";
 import { DEFAULT_AVATAR, useAccount } from "@/lib/use-account";
 import {
   changeNameFn,
@@ -60,7 +60,7 @@ function ProfilePage() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
-    await supabase.auth.signOut();
+    await authSupabase.auth.signOut();
     navigate({ to: "/", replace: true });
   }
 

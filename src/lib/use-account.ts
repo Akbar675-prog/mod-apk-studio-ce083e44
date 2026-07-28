@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { authSupabase } from "@/integrations/auth-supabase/client";
 import { myProfileFn } from "./account.functions";
 
 export type MyProfile = Awaited<ReturnType<typeof myProfileFn>>;
@@ -10,10 +10,10 @@ export function useSessionUserId() {
   const qc = useQueryClient();
   useEffect(() => {
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
+    authSupabase.auth.getSession().then(({ data }) => {
       if (alive) setUserId(data.session?.user.id ?? null);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: sub } = authSupabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       setUserId(session?.user.id ?? null);
       if (event === "SIGNED_OUT") qc.clear();

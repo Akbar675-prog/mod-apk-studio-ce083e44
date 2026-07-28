@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { LogIn, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { authSupabase } from "@/integrations/auth-supabase/client";
 import { resolveLoginEmailFn } from "@/lib/account.functions";
 import { useT } from "@/lib/i18n";
 
@@ -34,7 +34,7 @@ function LoginPage() {
     setBusy(true);
     try {
       const { email } = await resolveLoginEmailFn({ data: { identifier } });
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { error: signInError } = await authSupabase.auth.signInWithPassword({ email, password });
       if (signInError) throw new Error("Username/email atau password salah.");
       navigate({ to: "/profile" });
     } catch (err) {
