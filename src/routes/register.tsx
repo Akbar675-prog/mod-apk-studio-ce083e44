@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { UserPlus, Loader2, ShieldAlert } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { PasswordInput } from "@/components/PasswordInput";
+import { GoogleButton } from "@/components/GoogleButton";
 import { authSupabase } from "@/integrations/auth-supabase/client";
 import { registerAccountFn } from "@/lib/account.functions";
 import { useT } from "@/lib/i18n";
@@ -119,29 +121,17 @@ function RegisterPage() {
             />
           </Field>
           <Field label={t("Password")}>
-            <input
-              type="password"
+            <PasswordInput
               value={form.password}
-              onChange={(e) => set("password", e.target.value)}
-              required
-              minLength={6}
-              maxLength={72}
+              onChange={(v) => set("password", v)}
               autoComplete="new-password"
-              className={inputCls}
-              placeholder="••••••••"
             />
           </Field>
           <Field label={t("Konfirmasi Password")}>
-            <input
-              type="password"
+            <PasswordInput
               value={form.confirm}
-              onChange={(e) => set("confirm", e.target.value)}
-              required
-              minLength={6}
-              maxLength={72}
+              onChange={(v) => set("confirm", v)}
               autoComplete="new-password"
-              className={inputCls}
-              placeholder="••••••••"
             />
           </Field>
 
@@ -157,6 +147,8 @@ function RegisterPage() {
             {busy ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
             {t("Buat akun")}
           </button>
+
+          <GoogleButton label={t("Daftar dengan Google")} onError={setError} />
         </form>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">

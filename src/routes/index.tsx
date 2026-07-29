@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Plus, Download, Gem, Sparkles } from "lucide-react";
+import { Plus, Download, Gem, Sparkles, Clock } from "lucide-react";
 import { z } from "zod";
 import { listAppsFn, type AppListItem } from "@/lib/apps.functions";
 import { versionLabel } from "@/lib/metadata.functions";
@@ -133,6 +133,12 @@ function AppCard({ app, index }: { app: AppListItem; index: number }) {
           <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-950 shadow-md animate-fade-in">
             <Sparkles className="size-3" />
             New
+          </span>
+        )}
+        {app.Coming_soon && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-sky-400 to-indigo-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+            <Clock className="size-3" />
+            Soon
           </span>
         )}
         {app.Is_exclusive && (

@@ -27,6 +27,7 @@ export type AppListItem = {
   Apk_url?: string;
   Apk_filename?: string | null;
   Is_exclusive?: boolean;
+  Coming_soon?: boolean;
   Version: string | null;
   Arch: ArchFlags;
   Previews?: PreviewItem[]; // list of preview media (image or video)
@@ -60,6 +61,7 @@ const createInput = z.object({
   apk_filename: z.string().max(255).optional().nullable(),
   is_exclusive: z.boolean().optional().default(false),
   exclusive_password: z.string().trim().min(1).max(200).optional().nullable(),
+  coming_soon: z.boolean().optional().default(false),
   version: z.string().trim().max(40).optional().nullable(),
   arch: archSchema.optional(),
   previews: z
@@ -90,6 +92,11 @@ const updateInput = z.object({
     .array(z.object({ id: z.string().max(64), contentType: z.string().max(100) }))
     .max(20)
     .optional(),
+});
+
+// coming soon flag for updates
+const updateInputWithComing = updateInput.extend({
+  coming_soon: z.boolean().optional(),
 });
 
 function iconUrlFor(row: {
@@ -136,15 +143,16 @@ export const listAppsFn = createServerFn({ method: "GET" }).handler(
         ID: r.id,
         App_name: r.app_name,
         Description: r.description ?? "",
-        Download_url: excl ? "" : r.download_url ?? "",
+        Download_url: meta?.comingSoon ? "" : excl ? "" : r.download_url ?? "",
         App_icon: iconUrlFor(r),
         Created_at: (r as { created_at?: string }).created_at,
         Download_count:
           (r as { download_count?: number }).download_count ?? 0,
-        Has_apk: hasApk,
-        Apk_url: hasApk && !excl ? apkUrlFor(r.id) : undefined,
+        Has_apk: hasApk && !meta?.comingSoon,
+        Apk_url: hasApk && !excl && !meta?.comingSoon ? apkUrlFor(r.id) : undefined,
         Apk_filename: meta?.apkFilename ?? null,
         Is_exclusive: excl,
+        Coming_soon: !!meta?.comingSoon,
         Version: meta?.version ?? null,
         Arch: meta?.arch ?? { ...EMPTY_ARCH },
         Previews: previewUrls(meta?.previews),
@@ -178,14 +186,15 @@ export const getAppFn = createServerFn({ method: "GET" })
       ID: row.id,
       App_name: row.app_name,
       Description: row.description ?? "",
-      Download_url: excl ? "" : row.download_url ?? "",
+      Download_url: meta?.comingSoon ? "" : excl ? "" : row.download_url ?? "",
       App_icon: iconUrlFor(row),
       Created_at: row.created_at,
       Download_count: (row as { download_count?: number }).download_count ?? 0,
-      Has_apk: hasApk,
-      Apk_url: hasApk && !excl ? apkUrlFor(row.id) : undefined,
+      Has_apk: hasApk && !meta?.comingSoon,
+      Apk_url: hasApk && !excl && !meta?.comingSoon ? apkUrlFor(row.id) : undefined,
       Apk_filename: meta?.apkFilename ?? null,
       Is_exclusive: excl,
+      Coming_soon: !!meta?.comingSoon,
       Version: meta?.version ?? null,
       Arch: meta?.arch ?? { ...EMPTY_ARCH },
       Previews: previewUrls(meta?.previews),
@@ -269,6 +278,7 @@ export const getApkDownloadUrlFn = createServerFn({ method: "POST" })
       readIndex(),
     ]);
     if (!row) return { url: null };
+    if (meta[data.id]?.comingSoon) return { url: null };
     const apkId = (row as { apk_id?: string | null }).apk_id;
     if (!apkId) {
       const fallback = (row as { download_url?: string }).download_url ?? "";
@@ -358,6 +368,7 @@ export const createAppFn = createServerFn({ method: "POST" })
       },
       previews: data.previews ?? [],
       apkFilename: data.apk_filename ?? null,
+      comingSoon: !!data.coming_soon,
     });
 
     if (data.is_exclusive) {
@@ -385,7 +396,7 @@ export const createAppFn = createServerFn({ method: "POST" })
   });
 
 export const updateAppFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => updateInput.parse(d))
+  .inputValidator((d: unknown) => updateInputWithComing.parse(d))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
@@ -486,7 +497,9 @@ export const updateAppFn = createServerFn({ method: "POST" })
       arch?: ArchFlags;
       previews?: PreviewMeta[];
       apkFilename?: string | null;
+      comingSoon?: boolean;
     } = {};
+    if (data.coming_soon !== undefined) metaPatch.comingSoon = data.coming_soon;
     if (data.version !== undefined) {
       const v = (data.version ?? "").trim();
       metaPatch.version = v.length > 0 ? v : null;

@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft, Upload, Link as LinkIcon, Loader2, Trash2, Package, Lock, X,
-  Pencil, Save, Image as ImageIcon, Plus,
+  Pencil, Save, Image as ImageIcon, Plus, Clock,
 } from "lucide-react";
 import {
   createAppFn, updateAppFn, deleteAppFn, listAppsFn, getAppFn,
@@ -169,6 +169,7 @@ function AppForm({
   const [apkFile, setApkFile] = useState<File | null>(null);
   const [apkAction, setApkAction] = useState<"keep" | "replace" | "remove">("keep");
   const [isExclusive, setIsExclusive] = useState(existing?.Is_exclusive ?? false);
+  const [comingSoon, setComingSoon] = useState(existing?.Coming_soon ?? false);
   const [exclusivePassword, setExclusivePassword] = useState("");
   const [version, setVersion] = useState(existing?.Version ?? "");
   const [archArm64V8a, setArchArm64V8a] = useState(existing?.Arch?.arm64_v8a ?? false);
@@ -227,7 +228,7 @@ function AppForm({
     e.preventDefault();
     setError("");
     if (!name.trim()) return setError("Nama aplikasi wajib diisi.");
-    if (mode === "create" && !downloadUrl.trim() && !apkFile)
+    if (mode === "create" && !comingSoon && !downloadUrl.trim() && !apkFile)
       return setError("Isi link download, atau upload file .apk.");
     if (mode === "create" && isExclusive && !exclusivePassword.trim())
       return setError("Password Exclusive wajib diisi.");
@@ -257,7 +258,7 @@ function AppForm({
       let apk_id: string | null = null;
       let apk_content_type: string | null = null;
       let apk_size: number | null = null;
-      if (apkFile) {
+      if (apkFile && !comingSoon) {
         if (apkFile.size > 500 * 1024 * 1024) {
           setSubmitting(false);
           return setError("Ukuran .apk maksimal 500MB.");
@@ -302,7 +303,8 @@ function AppForm({
           data: {
             app_name: name.trim(),
             description: description.trim(),
-            download_url: downloadUrl.trim(),
+            download_url: comingSoon ? "" : downloadUrl.trim(),
+            coming_soon: comingSoon,
             icon_kind: (iconMode === "keep" ? "none" : iconMode) as IconMode,
             icon_url: iconMode === "url" ? iconUrl.trim() : null,
             icon_data_base64,
@@ -330,7 +332,8 @@ function AppForm({
             id: existing.ID,
             app_name: name.trim(),
             description: description.trim(),
-            download_url: downloadUrl.trim(),
+            download_url: comingSoon ? "" : downloadUrl.trim(),
+            coming_soon: comingSoon,
             icon_kind: iconMode as "keep" | "upload" | "url" | "none",
             icon_url: iconMode === "url" ? iconUrl.trim() : null,
             icon_data_base64,
@@ -389,6 +392,47 @@ function AppForm({
       </Card>
 
       <Card>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <Label>
+              <span className="inline-flex items-center gap-2">
+                <Clock className="size-5" /> Coming Soon App
+              </span>
+            </Label>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Jika aktif, aplikasi ditandai "Akan Datang" — link download dan file .apk
+              dinonaktifkan sampai mode ini dimatikan.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={comingSoon}
+            onClick={() =>
+              setComingSoon((v) => {
+                const next = !v;
+                if (next) {
+                  setDownloadUrl("");
+                  setApkFile(null);
+                  setApkAction(mode === "edit" ? "remove" : "keep");
+                }
+                return next;
+              })
+            }
+            className={`relative mt-1 inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
+              comingSoon ? "bg-primary" : "bg-surface-variant"
+            }`}
+          >
+            <span
+              className={`inline-block size-5 rounded-full bg-white shadow transition-transform ${
+                comingSoon ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </Card>
+
+      <Card>
         <Label>Link download APK</Label>
         <p className="mt-1 text-xs text-muted-foreground">
           Opsional jika kamu upload file .apk di bawah.
@@ -396,13 +440,14 @@ function AppForm({
         <input
           value={downloadUrl}
           onChange={(e) => setDownloadUrl(e.target.value)}
-          placeholder="https://..."
+          placeholder={comingSoon ? "Dinonaktifkan (mode Coming Soon)" : "https://..."}
           type="url"
-          className="input"
+          disabled={comingSoon}
+          className="input disabled:cursor-not-allowed disabled:opacity-50"
         />
       </Card>
 
-      <Card>
+      <Card className={comingSoon ? "pointer-events-none opacity-50" : undefined}>
         <Label>File .apk (opsional)</Label>
         {mode === "edit" && existing?.Has_apk && apkAction === "keep" && !apkFile && (
           <p className="mt-2 rounded-xl bg-primary-container px-3 py-2 text-xs text-on-primary-container">
@@ -829,9 +874,9 @@ function ManageAppsSection() {
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="m3-shadow-1 rounded-3xl bg-card p-5 md:p-6">{children}</div>
+    <div className={`m3-shadow-1 rounded-3xl bg-card p-5 md:p-6 ${className ?? ""}`}>{children}</div>
   );
 }
 

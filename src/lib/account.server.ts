@@ -110,9 +110,47 @@ export async function emailForIdentifier(identifier: string) {
   return { email: user.user.email as string };
 }
 
+/** Create a profile row for a user that signed in via OAuth (no register form). */
+async function ensureProfile(userId: string) {
+  const db = await admin();
+  const { data: user } = await db.auth.admin.getUserById(userId);
+  const meta = (user?.user?.user_metadata ?? {}) as Record<string, unknown>;
+  const email = (user?.user?.email as string | undefined) ?? "";
+  const rawName =
+    (meta.name as string) || (meta.full_name as string) || email.split("@")[0] || "Pengguna";
+  const base = normalizeUsername(
+    (meta.username as string) || email.split("@")[0] || "user",
+  ).replace(/[^a-z0-9_.]/g, "");
+  let candidate = (base || "user").slice(0, 16);
+  if (candidate.length < 3) candidate = `user${candidate}`;
+  for (let i = 0; i < 12; i++) {
+    const username = i === 0 ? candidate : `${candidate}${Math.floor(Math.random() * 10000)}`;
+    const { data: taken } = await db
+      .from("profiles")
+      .select("id")
+      .ilike("username", username)
+      .maybeSingle();
+    if (taken) continue;
+    const { data: profile, error } = await db
+      .from("profiles")
+      .insert({ id: userId, name: rawName.slice(0, 40), username })
+      .select("*")
+      .single();
+    if (!error && profile) {
+      if (Number(profile.user_no) === 1) {
+        await db.from("user_roles").insert({ user_id: userId, role: "admin" });
+      }
+      return profile;
+    }
+    if (error && !/duplicate/i.test(error.message)) throw new Error(error.message);
+  }
+  return null;
+}
+
 export async function getMyProfile(userId: string) {
   const db = await admin();
-  const { data } = await db.from("profiles").select("*").eq("id", userId).maybeSingle();
+  let { data } = await db.from("profiles").select("*").eq("id", userId).maybeSingle();
+  if (!data) data = await ensureProfile(userId);
   if (!data) return null;
   const counts = await followerCounts(db, userId, data.fake_followers);
   const { count: nameChanges } = await db

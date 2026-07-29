@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ArrowLeft, Download, CalendarDays, Users, Lock, Loader2, Gem, Cpu, Tag, Sparkles, Images } from "lucide-react";
+import { ArrowLeft, Download, CalendarDays, Users, Lock, Loader2, Gem, Cpu, Tag, Sparkles, Images, Clock } from "lucide-react";
 import {
   getAppFn,
   incrementDownloadFn,
@@ -164,6 +164,7 @@ function AppDetail() {
   }
 
   function onDownloadClick() {
+    if (app.Coming_soon) return;
     if (app.Is_exclusive) {
       setGateOpen(true);
       return;
@@ -212,6 +213,11 @@ function AppDetail() {
                     <Sparkles className="size-3.5" /> New
                   </span>
                 )}
+                {app.Coming_soon && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-400 to-indigo-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm">
+                    <Clock className="size-3.5" /> Coming Soon
+                  </span>
+                )}
                 {app.Is_exclusive && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-950 shadow-sm">
                     <Gem className="size-3.5" /> Exclusive
@@ -227,7 +233,7 @@ function AppDetail() {
               <PressButton
                 type="button"
                 onClick={onDownloadClick}
-                disabled={downloading}
+                disabled={downloading || !!app.Coming_soon}
                 onContextMenu={(e) => e.preventDefault()}
                 onDragStart={(e) => e.preventDefault()}
                 draggable={false}
@@ -240,12 +246,18 @@ function AppDetail() {
               >
                 {downloading ? (
                   <Loader2 className="size-5 animate-spin" />
+                ) : app.Coming_soon ? (
+                  <Clock className="size-5" />
                 ) : app.Is_exclusive ? (
                   <Lock className="size-5" />
                 ) : (
                   <Download className="size-5" />
                 )}
-                {downloading ? "Memulai..." : "Download APK"}
+                {app.Coming_soon
+                  ? "Akan Datang"
+                  : downloading
+                    ? "Memulai..."
+                    : "Download APK"}
               </PressButton>
             </div>
           </div>
