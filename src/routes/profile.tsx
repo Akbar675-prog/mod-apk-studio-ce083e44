@@ -68,22 +68,29 @@ function ProfilePage() {
     <div className="min-h-screen bg-background pb-16">
       <AppHeader />
       <main className="mx-auto mt-6 w-full max-w-2xl px-4">
-        <section className="m3-shadow-1 flex items-center gap-4 rounded-3xl bg-card p-5">
-          <img
-            src={profile.avatar_url || DEFAULT_AVATAR}
-            alt={`Foto profil ${profile.name}`}
-            className="size-20 rounded-full bg-surface-variant object-cover"
-          />
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h1 className="truncate font-display text-2xl">{profile.name}</h1>
-              {profile.verified && <VerifiedBadge className="size-5 shrink-0" />}
+        <section className="m3-shadow-1 overflow-hidden rounded-3xl bg-card">
+          <div className="h-24 bg-gradient-to-r from-primary/80 via-primary/40 to-surface-variant" />
+          <div className="px-5 pb-5">
+            <img
+              src={profile.avatar_url || DEFAULT_AVATAR}
+              alt={`Foto profil ${profile.name}`}
+              className="-mt-12 size-24 rounded-full border-4 border-card bg-surface-variant object-cover"
+            />
+            <div className="mt-3 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h1 className="truncate font-display text-2xl">{profile.name}</h1>
+                {profile.verified && <VerifiedBadge className="size-6 shrink-0" />}
+              </div>
+              <p className="text-sm text-muted-foreground">@{profile.username}</p>
+              <div className="mt-3 flex gap-2">
+                <span className="rounded-full bg-surface-variant px-3 py-1 text-xs">
+                  <b>{profile.followers.toLocaleString("id-ID")}</b> {t("pengikut")}
+                </span>
+                <span className="rounded-full bg-surface-variant px-3 py-1 text-xs">
+                  <b>{profile.following.toLocaleString("id-ID")}</b> {t("mengikuti")}
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">@{profile.username}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {profile.followers.toLocaleString("id-ID")} {t("pengikut")} ·{" "}
-              {profile.following.toLocaleString("id-ID")} {t("mengikuti")}
-            </p>
           </div>
         </section>
 
