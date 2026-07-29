@@ -22,6 +22,7 @@ export type AppMeta = {
   arch: ArchFlags;
   previews?: PreviewMeta[];
   apkFilename?: string | null;
+  comingSoon?: boolean;
 };
 
 export type AppMetaIndex = Record<string, AppMeta>;
@@ -105,6 +106,8 @@ export async function updateAppMeta(
     previews: patch.previews ?? prev.previews ?? [],
     apkFilename:
       patch.apkFilename !== undefined ? patch.apkFilename : prev.apkFilename ?? null,
+    comingSoon:
+      patch.comingSoon !== undefined ? patch.comingSoon : prev.comingSoon ?? false,
   };
   idx[id] = next;
   await writeIndex(idx);
