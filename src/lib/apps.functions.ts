@@ -27,6 +27,7 @@ export type AppListItem = {
   Apk_url?: string;
   Apk_filename?: string | null;
   Is_exclusive?: boolean;
+  Coming_soon?: boolean;
   Version: string | null;
   Arch: ArchFlags;
   Previews?: PreviewItem[]; // list of preview media (image or video)
@@ -60,6 +61,7 @@ const createInput = z.object({
   apk_filename: z.string().max(255).optional().nullable(),
   is_exclusive: z.boolean().optional().default(false),
   exclusive_password: z.string().trim().min(1).max(200).optional().nullable(),
+  coming_soon: z.boolean().optional().default(false),
   version: z.string().trim().max(40).optional().nullable(),
   arch: archSchema.optional(),
   previews: z
@@ -90,6 +92,11 @@ const updateInput = z.object({
     .array(z.object({ id: z.string().max(64), contentType: z.string().max(100) }))
     .max(20)
     .optional(),
+});
+
+// coming soon flag for updates
+const updateInputWithComing = updateInput.extend({
+  coming_soon: z.boolean().optional(),
 });
 
 function iconUrlFor(row: {
