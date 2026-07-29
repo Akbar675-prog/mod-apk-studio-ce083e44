@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Plus, Download, Gem, Sparkles } from "lucide-react";
+import { Plus, Download, Gem, Sparkles, Clock } from "lucide-react";
 import { z } from "zod";
 import { listAppsFn, type AppListItem } from "@/lib/apps.functions";
 import { versionLabel } from "@/lib/metadata.functions";
