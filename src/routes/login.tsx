@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LogIn, Loader2, Eye, EyeOff } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { PasswordInput } from "@/components/PasswordInput";
 import { GoogleButton } from "@/components/GoogleButton";
