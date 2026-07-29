@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LogIn, Loader2 } from "lucide-react";
+import { LogIn, Loader2, Eye, EyeOff } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { PasswordInput } from "@/components/PasswordInput";
+import { GoogleButton } from "@/components/GoogleButton";
 import { authSupabase } from "@/integrations/auth-supabase/client";
 import { resolveLoginEmailFn } from "@/lib/account.functions";
 import { useT } from "@/lib/i18n";
@@ -66,15 +68,10 @@ function LoginPage() {
             />
           </Field>
           <Field label={t("Password")}>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              maxLength={72}
+              onChange={setPassword}
               autoComplete="current-password"
-              className="w-full rounded-2xl bg-surface-variant px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
             />
           </Field>
 
@@ -91,14 +88,7 @@ function LoginPage() {
             {t("Masuk")}
           </button>
 
-          <button
-            type="button"
-            disabled
-            title="Segera hadir"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-input bg-background px-5 py-3 text-sm font-medium opacity-60"
-          >
-            {t("Masuk dengan Google (segera)")}
-          </button>
+          <GoogleButton label={t("Masuk dengan Google")} onError={setError} />
         </form>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
