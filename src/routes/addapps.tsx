@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft, Upload, Link as LinkIcon, Loader2, Trash2, Package, Lock, X,
-  Pencil, Save, Image as ImageIcon, Plus,
+  Pencil, Save, Image as ImageIcon, Plus, Clock,
 } from "lucide-react";
 import {
   createAppFn, updateAppFn, deleteAppFn, listAppsFn, getAppFn,
@@ -874,9 +874,9 @@ function ManageAppsSection() {
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="m3-shadow-1 rounded-3xl bg-card p-5 md:p-6">{children}</div>
+    <div className={`m3-shadow-1 rounded-3xl bg-card p-5 md:p-6 ${className ?? ""}`}>{children}</div>
   );
 }
 
