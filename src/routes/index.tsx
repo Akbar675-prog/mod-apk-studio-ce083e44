@@ -135,6 +135,12 @@ function AppCard({ app, index }: { app: AppListItem; index: number }) {
             New
           </span>
         )}
+        {app.Coming_soon && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-sky-400 to-indigo-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md">
+            <Clock className="size-3" />
+            Soon
+          </span>
+        )}
         {app.Is_exclusive && (
           <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-950 shadow-md">
             <Gem className="size-3" />
