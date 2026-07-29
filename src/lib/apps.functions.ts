@@ -152,7 +152,6 @@ export const listAppsFn = createServerFn({ method: "GET" }).handler(
         Apk_url: hasApk && !excl && !meta?.comingSoon ? apkUrlFor(r.id) : undefined,
         Apk_filename: meta?.apkFilename ?? null,
         Is_exclusive: excl,
-      Coming_soon: !!meta?.comingSoon,
         Coming_soon: !!meta?.comingSoon,
         Version: meta?.version ?? null,
         Arch: meta?.arch ?? { ...EMPTY_ARCH },
