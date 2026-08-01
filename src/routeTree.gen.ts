@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoteMakerRouteImport } from './routes/vote-maker'
+import { Route as VerifiedRouteImport } from './routes/verified'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -40,6 +41,11 @@ import { Route as AppsIconFGJ01IdRouteImport } from './routes/apps.icon.FGJ01.$i
 const VoteMakerRoute = VoteMakerRouteImport.update({
   id: '/vote-maker',
   path: '/vote-maker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifiedRoute = VerifiedRouteImport.update({
+  id: '/verified',
+  path: '/verified',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StatusRoute = StatusRouteImport.update({
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/status': typeof StatusRoute
+  '/verified': typeof VerifiedRoute
   '/vote-maker': typeof VoteMakerRoute
   '/apps/$id': typeof AppsIdRoute
   '/data/get-verified': typeof DataGetVerifiedRoute
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/status': typeof StatusRoute
+  '/verified': typeof VerifiedRoute
   '/vote-maker': typeof VoteMakerRoute
   '/apps/$id': typeof AppsIdRoute
   '/data/get-verified': typeof DataGetVerifiedRoute
@@ -247,6 +255,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/status': typeof StatusRoute
+  '/verified': typeof VerifiedRoute
   '/vote-maker': typeof VoteMakerRoute
   '/apps/$id': typeof AppsIdRoute
   '/data/get-verified': typeof DataGetVerifiedRoute
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/status'
+    | '/verified'
     | '/vote-maker'
     | '/apps/$id'
     | '/data/get-verified'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/status'
+    | '/verified'
     | '/vote-maker'
     | '/apps/$id'
     | '/data/get-verified'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/status'
+    | '/verified'
     | '/vote-maker'
     | '/apps/$id'
     | '/data/get-verified'
@@ -366,6 +378,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatusRoute: typeof StatusRoute
+  VerifiedRoute: typeof VerifiedRoute
   VoteMakerRoute: typeof VoteMakerRoute
   AppsIdRoute: typeof AppsIdRoute
   DataGetVerifiedRoute: typeof DataGetVerifiedRoute
@@ -388,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/vote-maker'
       fullPath: '/vote-maker'
       preLoaderRoute: typeof VoteMakerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verified': {
+      id: '/verified'
+      path: '/verified'
+      fullPath: '/verified'
+      preLoaderRoute: typeof VerifiedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/status': {
@@ -590,6 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatusRoute: StatusRoute,
+  VerifiedRoute: VerifiedRoute,
   VoteMakerRoute: VoteMakerRoute,
   AppsIdRoute: AppsIdRoute,
   DataGetVerifiedRoute: DataGetVerifiedRoute,

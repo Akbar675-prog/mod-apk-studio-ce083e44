@@ -3,7 +3,7 @@ import { queryOptions, useSuspenseQuery, useQuery, useQueryClient } from "@tanst
 import { useState } from "react";
 import { Loader2, UserPlus, UserCheck } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { VerifiedBadgeButton } from "@/components/VerifiedBadge";
 import { userProfileFn, followStateFn, toggleFollowFn } from "@/lib/account.functions";
 import { DEFAULT_AVATAR, useAccount } from "@/lib/use-account";
 import { useT } from "@/lib/i18n";
@@ -69,7 +69,7 @@ function UserProfilePage() {
             <div className="mt-3 min-w-0">
               <div className="flex items-center gap-1.5">
                 <h1 className="truncate font-display text-2xl">{profile.name}</h1>
-                {profile.verified && <VerifiedBadge className="size-6 shrink-0" />}
+                {profile.verified && <VerifiedBadgeButton className="size-6" />}
               </div>
               <p className="text-sm text-muted-foreground">@{profile.username}</p>
               <span className="mt-2 inline-flex rounded-full bg-surface-variant px-3 py-1 text-xs text-muted-foreground">
