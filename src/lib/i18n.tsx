@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { translateTextsFn } from "./translate.functions";
+import { VOCAB } from "./i18n-vocab";
 
 export type Language = { code: string; name: string; native: string; flag: string };
 
@@ -156,10 +157,18 @@ function readKeys(): string[] {
 function writeKeys(keys: Set<string>) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(KEYS_KEY, JSON.stringify(Array.from(keys).slice(-800)));
+    window.localStorage.setItem(KEYS_KEY, JSON.stringify(Array.from(keys).slice(-4000)));
   } catch {
     /* quota */
   }
+}
+
+/** Queue every string the app can render, not just the ones already seen. */
+function seedAll(known: Set<string>, cached: Record<string, string>, pending: Set<string>) {
+  VOCAB.forEach((k) => known.add(k));
+  known.forEach((k) => {
+    if (cached[k] === undefined) pending.add(k);
+  });
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -177,15 +186,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     known.current = new Set(readKeys());
+    VOCAB.forEach((k) => known.current.add(k));
+    writeKeys(known.current);
     const saved = window.localStorage.getItem(LANG_KEY);
     if (saved && saved !== SOURCE_LANG) {
       setLangState(saved);
       const cached = readCache(saved);
       setDict(cached);
-      // Warm up anything we already know about but haven't translated yet.
-      known.current.forEach((k) => {
-        if (cached[k] === undefined) pending.current.add(k);
-      });
+      // Warm up the whole vocabulary, not just strings this browser has seen.
+      seedAll(known.current, cached, pending.current);
       if (pending.current.size > 0) {
         langRef.current = saved;
         timer.current = setTimeout(() => void flush(), 0);
@@ -306,9 +315,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       if (code === SOURCE_LANG) return;
       // Translate the entire known vocabulary immediately so the whole UI
       // switches over at once instead of string-by-string on re-render.
-      known.current.forEach((k) => {
-        if (cached[k] === undefined) pending.current.add(k);
-      });
+      seedAll(known.current, cached, pending.current);
       if (pending.current.size > 0) timer.current = setTimeout(() => void flush(), 0);
     },
     [flush],
