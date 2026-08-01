@@ -213,7 +213,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const flush = useCallback(async () => {
     const target = langRef.current;
     if (target === SOURCE_LANG) return;
-    const all = Array.from(pending.current);
+    // Cap each round so a big vocabulary doesn't fire dozens of parallel calls.
+    const all = Array.from(pending.current).slice(0, 300);
     if (all.length === 0) return;
     all.forEach((b) => {
       pending.current.delete(b);
