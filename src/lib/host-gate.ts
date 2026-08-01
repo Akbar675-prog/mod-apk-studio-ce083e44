@@ -27,7 +27,8 @@ export function isBlockedByHostGate(host: string | null, pathname: string): bool
 
   // status.<domain> serves only /status
   if (isStatusHost(host)) {
-    return !(pathname === "/status" || pathname === "/status/");
+    // "/" is allowed so the root route can redirect to /status.
+    return !(pathname === "/" || pathname === "/status" || pathname === "/status/");
   }
 
   // galileouserscontent.<domain> serves only avatar/profile-image paths
