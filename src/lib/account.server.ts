@@ -137,6 +137,18 @@ async function ensureProfile(userId: string) {
       .select("*")
       .single();
     if (!error && profile) {
+      // Google/OAuth avatars: copy the provider picture into our own storage
+      // so it is served from galileouserscontent.visora.my.id.
+      const picture =
+        (meta.avatar_url as string) || (meta.picture as string) || "";
+      if (picture.startsWith("http")) {
+        try {
+          const res = await setAvatarFromUrl(userId, picture);
+          profile.avatar_url = res.avatar_url;
+        } catch {
+          /* avatar is optional; keep the account usable */
+        }
+      }
       if (Number(profile.user_no) === 1) {
         await db.from("user_roles").insert({ user_id: userId, role: "admin" });
       }
