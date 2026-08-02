@@ -87,7 +87,10 @@ export async function translateBatch(texts: string[], lang: string, langName: st
     chunks[ci].forEach((item, k) => {
       const val = out[k] ?? item.t;
       result[item.i] = val;
-      remember(lang, item.t, val);
+      // A value identical to the source means the model dropped that index or the
+      // gateway call failed. Caching it would poison this string for every later
+      // request, so leave it out and let the client retry.
+      if (val !== item.t) remember(lang, item.t, val);
     });
   });
 
