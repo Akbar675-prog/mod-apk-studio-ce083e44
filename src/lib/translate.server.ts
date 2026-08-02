@@ -1,7 +1,7 @@
 /** Server-side translation with an in-memory cache shared by all requests
  *  hitting this worker instance, plus parallel chunking for speed. */
 
-const CHUNK = 30;
+const CHUNK = 20;
 const MAX_CACHE = 8000;
 const cache = new Map<string, string>();
 

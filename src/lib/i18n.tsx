@@ -227,7 +227,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // Split into groups and fire them all at once so the whole UI flips over
     // in roughly the time of a single request instead of batch after batch.
     const groups: string[][] = [];
-    for (let i = 0; i < all.length; i += 60) groups.push(all.slice(i, i + 60));
+    for (let i = 0; i < all.length; i += 20) groups.push(all.slice(i, i + 20));
 
     await Promise.all(
       groups.map(async (batch) => {
@@ -249,7 +249,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
               } else {
                 const n = (failures.current.get(text) ?? 0) + 1;
                 failures.current.set(text, n);
-                if (n <= 2) pending.current.add(text);
+                if (n <= 5) pending.current.add(text);
               }
             });
             writeCache(target, { ...readCache(target), ...next });
@@ -260,7 +260,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
             batch.forEach((text) => {
               const n = (failures.current.get(text) ?? 0) + 1;
               failures.current.set(text, n);
-              if (n <= 2) pending.current.add(text);
+              if (n <= 5) pending.current.add(text);
             });
           }
         } finally {
@@ -282,7 +282,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         writeKeys(known.current);
       }
       if (pending.current.has(text) || inFlight.current.has(text)) return;
-      if ((failures.current.get(text) ?? 0) > 2) return;
+      if ((failures.current.get(text) ?? 0) > 5) return;
       pending.current.add(text);
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => void flush(), 40);
