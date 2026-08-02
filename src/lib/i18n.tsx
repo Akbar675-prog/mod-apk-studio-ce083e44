@@ -10,7 +10,7 @@ import {
 } from "react";
 import { translateTextsFn } from "./translate.functions";
 import { VOCAB } from "./i18n-vocab";
-import { installDomTranslator, retranslateDocument } from "./dom-i18n";
+import { installDomTranslator, resetDomOutputs, retranslateDocument } from "./dom-i18n";
 
 export type Language = { code: string; name: string; native: string; flag: string };
 
@@ -227,10 +227,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // Split into groups and fire them all at once so the whole UI flips over
     // in roughly the time of a single request instead of batch after batch.
     const groups: string[][] = [];
-    for (let i = 0; i < all.length; i += 60) groups.push(all.slice(i, i + 60));
+    for (let i = 0; i < all.length; i += 20) groups.push(all.slice(i, i + 20));
 
-    await Promise.all(
-      groups.map(async (batch) => {
+    // Cap concurrency: firing every group at once trips the AI gateway's rate
+    // limit (HTTP 429), and a rate-limited batch comes back untranslated.
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    const runBatch = async (batch: string[]) => {
         try {
           const res = await translateTextsFn({
             data: { texts: batch, lang: target, langName: meta.name },
@@ -249,7 +252,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
               } else {
                 const n = (failures.current.get(text) ?? 0) + 1;
                 failures.current.set(text, n);
-                if (n <= 2) pending.current.add(text);
+                if (n <= 5) pending.current.add(text);
               }
             });
             writeCache(target, { ...readCache(target), ...next });
@@ -260,11 +263,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
             batch.forEach((text) => {
               const n = (failures.current.get(text) ?? 0) + 1;
               failures.current.set(text, n);
-              if (n <= 2) pending.current.add(text);
+              if (n <= 5) pending.current.add(text);
             });
           }
         } finally {
           batch.forEach((b) => inFlight.current.delete(b));
+        }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, groups.length) }, async () => {
+        while (cursor < groups.length) {
+          const batch = groups[cursor++];
+          await runBatch(batch);
         }
       }),
     );
@@ -282,7 +293,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         writeKeys(known.current);
       }
       if (pending.current.has(text) || inFlight.current.has(text)) return;
-      if ((failures.current.get(text) ?? 0) > 2) return;
+      if ((failures.current.get(text) ?? 0) > 5) return;
       pending.current.add(text);
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => void flush(), 40);
@@ -321,6 +332,31 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     retranslateDocument(domApply);
   }, [dict, lang, domApply]);
+
+  // Switching straight from one target language to another leaves the previous
+  // language's text in the DOM: restore the source copy first, then re-translate.
+  const prevLang = useRef(lang);
+  useEffect(() => {
+    if (prevLang.current !== lang) {
+      prevLang.current = lang;
+      retranslateDocument(() => ({ dict: {}, request, restore: true }));
+      resetDomOutputs();
+      retranslateDocument(domApply);
+    }
+  }, [lang, request, domApply]);
+
+  // Safety net: React can commit text after our last pass, so keep sweeping for
+  // a while after a language change until the page has settled.
+  useEffect(() => {
+    if (lang === SOURCE_LANG) return;
+    let rounds = 0;
+    const id = setInterval(() => {
+      rounds += 1;
+      retranslateDocument(domApply);
+      if (rounds > 40) clearInterval(id);
+    }, 1500);
+    return () => clearInterval(id);
+  }, [lang, domApply]);
 
   const setLang = useCallback(
     (code: string) => {

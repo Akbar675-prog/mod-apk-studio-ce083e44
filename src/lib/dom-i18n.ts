@@ -27,6 +27,11 @@ const attrApplied = new WeakMap<Element, Record<string, string>>();
 
 const NUMERIC = /^[\s\d.,:%+\-/()[\]|·—–]*$/;
 
+/** Every value we've ever written into the DOM. React can re-render a node with
+ *  an already-translated string; without this we'd treat it as fresh source text
+ *  and burn a translation request on it. */
+const outputs = new Set<string>();
+
 function translatable(raw: string) {
   const key = raw.trim();
   if (key.length < 1) return null;
@@ -67,6 +72,7 @@ function handleText(node: Text, { dict, request, restore }: Apply) {
 
   const key = translatable(source);
   if (!key) return;
+  if (outputs.has(key)) return;
   const hit = dict[key];
   if (hit === undefined) {
     request(key);
@@ -75,6 +81,7 @@ function handleText(node: Text, { dict, request, restore }: Apply) {
   const next = source.replace(key, hit);
   if (node.data !== next) node.data = next;
   applied.set(node, next);
+  outputs.add(hit);
 }
 
 function handleAttrs(el: Element, { dict, request, restore }: Apply) {
@@ -99,6 +106,7 @@ function handleAttrs(el: Element, { dict, request, restore }: Apply) {
 
     const key = translatable(source);
     if (!key) continue;
+    if (outputs.has(key)) continue;
     const hit = dict[key];
     if (hit === undefined) {
       request(key);
@@ -108,6 +116,7 @@ function handleAttrs(el: Element, { dict, request, restore }: Apply) {
     if (current !== next) el.setAttribute(attr, next);
     mineMap[attr] = next;
     attrApplied.set(el, mineMap);
+    outputs.add(hit);
   }
 }
 
@@ -144,14 +153,14 @@ export function installDomTranslator(get: () => Apply) {
 
   const run = (roots?: Node[]) => {
     const apply = get();
-    observer?.disconnect();
-    try {
-      (roots ?? [document.body]).forEach((r) => {
-        if (r.isConnected) walk(r, apply);
-      });
-    } finally {
-      observe();
-    }
+    // Never disconnect while writing: MutationObserver drops queued records on
+    // disconnect, so a React text update delivered right before our write would
+    // be lost and that node would stay in the source language forever. Applying
+    // a translation is idempotent (see handleText/handleAttrs), so observing our
+    // own writes is safe and cannot loop.
+    (roots ?? [document.body]).forEach((r) => {
+      if (r.isConnected) walk(r, apply);
+    });
   };
 
   const schedule = (roots?: Node[]) => {
@@ -167,16 +176,6 @@ export function installDomTranslator(get: () => Apply) {
     });
   };
 
-  const observe = () => {
-    observer?.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: [...ATTRS],
-    });
-  };
-
   observer = new MutationObserver((records) => {
     const roots: Node[] = [];
     for (const rec of records) {
@@ -187,6 +186,14 @@ export function installDomTranslator(get: () => Apply) {
     schedule(roots.length > 0 && roots.length < 200 ? roots : undefined);
   });
 
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: [...ATTRS],
+  });
+
   run();
   return () => observer?.disconnect();
 }
@@ -195,4 +202,11 @@ export function installDomTranslator(get: () => Apply) {
 export function retranslateDocument(get: () => Apply) {
   if (typeof document === "undefined") return;
   walk(document.body, get());
+}
+
+/** Forget which strings we produced. Required when switching directly from one
+ *  target language to another: the DOM still holds the previous language's text,
+ *  which would otherwise be skipped as "already translated". */
+export function resetDomOutputs() {
+  outputs.clear();
 }
