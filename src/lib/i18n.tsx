@@ -10,6 +10,7 @@ import {
 } from "react";
 import { translateTextsFn } from "./translate.functions";
 import { VOCAB } from "./i18n-vocab";
+import { installDomTranslator, retranslateDocument } from "./dom-i18n";
 
 export type Language = { code: string; name: string; native: string; flag: string };
 
@@ -301,6 +302,25 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     },
     [dict, request],
   );
+
+  // Whole-document translation: any string a component forgot to wrap in t()
+  // still gets translated, so a language switch changes the entire page.
+  const dictRef = useRef(dict);
+  dictRef.current = dict;
+  const domApply = useCallback(
+    () => ({
+      dict: langRef.current === SOURCE_LANG ? {} : dictRef.current,
+      request,
+      restore: langRef.current === SOURCE_LANG,
+    }),
+    [request],
+  );
+
+  useEffect(() => installDomTranslator(domApply), [domApply]);
+
+  useEffect(() => {
+    retranslateDocument(domApply);
+  }, [dict, lang, domApply]);
 
   const setLang = useCallback(
     (code: string) => {
