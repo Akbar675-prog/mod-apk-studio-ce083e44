@@ -229,8 +229,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const groups: string[][] = [];
     for (let i = 0; i < all.length; i += 20) groups.push(all.slice(i, i + 20));
 
-    await Promise.all(
-      groups.map(async (batch) => {
+    // Cap concurrency: firing every group at once trips the AI gateway's rate
+    // limit (HTTP 429), and a rate-limited batch comes back untranslated.
+    const CONCURRENCY = 4;
+    let cursor = 0;
+    const runBatch = async (batch: string[]) => {
         try {
           const res = await translateTextsFn({
             data: { texts: batch, lang: target, langName: meta.name },
@@ -265,6 +268,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
           }
         } finally {
           batch.forEach((b) => inFlight.current.delete(b));
+        }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, groups.length) }, async () => {
+        while (cursor < groups.length) {
+          const batch = groups[cursor++];
+          await runBatch(batch);
         }
       }),
     );
