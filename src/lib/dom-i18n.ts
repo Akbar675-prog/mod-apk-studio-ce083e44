@@ -203,3 +203,10 @@ export function retranslateDocument(get: () => Apply) {
   if (typeof document === "undefined") return;
   walk(document.body, get());
 }
+
+/** Forget which strings we produced. Required when switching directly from one
+ *  target language to another: the DOM still holds the previous language's text,
+ *  which would otherwise be skipped as "already translated". */
+export function resetDomOutputs() {
+  outputs.clear();
+}
