@@ -2,6 +2,9 @@
  *  hitting this worker instance, plus parallel chunking for speed. */
 
 const CHUNK = 20;
+/** The AI gateway rate-limits bursts (HTTP 429). Keep concurrency low and retry. */
+const CONCURRENCY = 3;
+const RETRIES = 4;
 const MAX_CACHE = 8000;
 const cache = new Map<string, string>();
 
@@ -14,11 +17,28 @@ function remember(lang: string, text: string, out: string) {
   cache.set(ckey(lang, text), out);
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Run tasks with a small concurrency pool so we never burst the gateway. */
+async function pool<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+  const out: T[] = new Array(tasks.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
+    while (next < tasks.length) {
+      const i = next++;
+      out[i] = await tasks[i]();
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 async function translateChunk(
   texts: string[],
   lang: string,
   langName: string,
   key: string,
+  attempt = 0,
 ): Promise<string[]> {
   const payload = texts.map((t, i) => ({ i, t }));
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -44,7 +64,16 @@ async function translateChunk(
     }),
   });
 
-  if (!res.ok) return texts;
+  if (!res.ok) {
+    // 429 / 5xx are transient: back off and try again instead of silently
+    // returning the Indonesian source (which is what made whole strings never
+    // translate in production, where traffic hits the rate limit).
+    if ((res.status === 429 || res.status >= 500) && attempt < RETRIES) {
+      await sleep(500 * 2 ** attempt + Math.random() * 250);
+      return translateChunk(texts, lang, langName, key, attempt + 1);
+    }
+    return texts;
+  }
 
   try {
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
@@ -59,6 +88,10 @@ async function translateChunk(
     }
     return out;
   } catch {
+    if (attempt < RETRIES) {
+      await sleep(400 * 2 ** attempt);
+      return translateChunk(texts, lang, langName, key, attempt + 1);
+    }
     return texts;
   }
 }
@@ -79,8 +112,9 @@ export async function translateBatch(texts: string[], lang: string, langName: st
   const chunks: { i: number; t: string }[][] = [];
   for (let i = 0; i < missing.length; i += CHUNK) chunks.push(missing.slice(i, i + CHUNK));
 
-  const settled = await Promise.all(
-    chunks.map((c) => translateChunk(c.map((x) => x.t), lang, langName, key)),
+  const settled = await pool(
+    chunks.map((c) => () => translateChunk(c.map((x) => x.t), lang, langName, key)),
+    CONCURRENCY,
   );
 
   settled.forEach((out, ci) => {
