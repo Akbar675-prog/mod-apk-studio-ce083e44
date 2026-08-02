@@ -10,7 +10,7 @@ import {
 } from "react";
 import { translateTextsFn } from "./translate.functions";
 import { VOCAB } from "./i18n-vocab";
-import { installDomTranslator, retranslateDocument } from "./dom-i18n";
+import { installDomTranslator, resetDomOutputs, retranslateDocument } from "./dom-i18n";
 
 export type Language = { code: string; name: string; native: string; flag: string };
 
@@ -321,6 +321,31 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     retranslateDocument(domApply);
   }, [dict, lang, domApply]);
+
+  // Switching straight from one target language to another leaves the previous
+  // language's text in the DOM: restore the source copy first, then re-translate.
+  const prevLang = useRef(lang);
+  useEffect(() => {
+    if (prevLang.current !== lang) {
+      prevLang.current = lang;
+      retranslateDocument(() => ({ dict: {}, request, restore: true }));
+      resetDomOutputs();
+      retranslateDocument(domApply);
+    }
+  }, [lang, request, domApply]);
+
+  // Safety net: React can commit text after our last pass, so keep sweeping for
+  // a while after a language change until the page has settled.
+  useEffect(() => {
+    if (lang === SOURCE_LANG) return;
+    let rounds = 0;
+    const id = setInterval(() => {
+      rounds += 1;
+      retranslateDocument(domApply);
+      if (rounds > 40) clearInterval(id);
+    }, 1500);
+    return () => clearInterval(id);
+  }, [lang, domApply]);
 
   const setLang = useCallback(
     (code: string) => {
