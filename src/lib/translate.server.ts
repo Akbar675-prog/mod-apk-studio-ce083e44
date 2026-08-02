@@ -50,8 +50,11 @@ async function translateChunk(
         {
           role: "system",
           content:
-            "You are a UI localization engine. Translate each string into the requested language. " +
-            "Keep placeholders, numbers, emojis, brand/product names (e.g. Galileo, APK, GMA) intact. " +
+            "You are a UI localization engine. Every input string is Indonesian UI copy. " +
+            "Always output the target-language translation, even for a single word: a lone word like " +
+            '"Terang" or "Gelap" is UI copy, never a person\'s name. ' +
+            "Leave a string unchanged ONLY if it is a brand/product name (Galileo, GMA, APK, WhatsApp, YouTube). " +
+            "Keep placeholders, numbers and emojis intact. " +
             "Keep translations short and natural for app UI. " +
             'Reply ONLY with JSON: {"items":[{"i":0,"t":"..."}]} preserving every index.',
         },
